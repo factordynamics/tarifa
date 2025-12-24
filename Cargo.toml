@@ -1,0 +1,76 @@
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT"
+homepage = "https://github.com/factordynamics/tarifa"
+repository = "https://github.com/factordynamics/tarifa"
+documentation = "https://docs.rs/tarifa"
+authors = ["Factor Dynamics"]
+keywords = ["alpha-model", "quantitative-finance", "equity", "signal-research"]
+categories = ["finance", "mathematics", "science"]
+
+[workspace]
+resolver = "2"
+members = ["crates/*", "bin"]
+default-members = ["bin"]
+
+[workspace.lints.rust]
+missing-debug-implementations = "warn"
+missing-docs = "warn"
+unreachable-pub = "warn"
+unused-must-use = "deny"
+rust-2018-idioms = "deny"
+unnameable-types = "warn"
+
+[workspace.lints.rustdoc]
+all = "warn"
+
+[workspace.lints.clippy]
+all = { level = "warn", priority = -1 }
+missing-const-for-fn = "warn"
+use-self = "warn"
+option-if-let-else = "warn"
+redundant-clone = "warn"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+debug = "none"
+strip = "symbols"
+
+[workspace.dependencies]
+# Internal crates
+tarifa = { version = "0.1.0", path = "crates/tarifa" }
+tarifa-traits = { version = "0.1.0", path = "crates/tarifa-traits" }
+tarifa-signals = { version = "0.1.0", path = "crates/tarifa-signals" }
+tarifa-combine = { version = "0.1.0", path = "crates/tarifa-combine" }
+tarifa-eval = { version = "0.1.0", path = "crates/tarifa-eval" }
+
+# Perth integration
+perth-data = { path = "../perth/crates/perth-data" }
+
+# DataFrames
+polars = { version = "0.46", default-features = false, features = ["lazy", "dtype-date", "streaming", "temporal", "serde"] }
+
+# Linear algebra
+ndarray = { version = "0.16", features = ["rayon"] }
+
+# Error handling
+thiserror = "2.0"
+
+# Utilities
+derive_more = { version = "2", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4", features = ["serde"] }
+
+# Async runtime
+tokio = { version = "1", features = ["full"] }
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+anyhow = "1"
+
+# Testing
+approx = "0.5"

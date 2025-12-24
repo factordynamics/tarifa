@@ -1,0 +1,22 @@
+[package]
+name = "tarifa-eval"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Backtesting and signal evaluation for tarifa"
+
+[dependencies]
+tarifa-traits.workspace = true
+tarifa-signals.workspace = true
+polars.workspace = true
+ndarray.workspace = true
+serde.workspace = true
+chrono.workspace = true
+
+[dev-dependencies]
+approx = "0.5"
+
+[lints]
+workspace = true

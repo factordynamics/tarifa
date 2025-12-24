@@ -1,0 +1,16 @@
+[package]
+name = "tarifa-combine"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+tarifa-traits.workspace = true
+polars.workspace = true
+ndarray.workspace = true
+serde.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,24 @@
+[package]
+name = "tarifa-traits"
+version.workspace = true
+authors.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+documentation.workspace = true
+readme = "README.md"
+description = "Core trait definitions for the Tarifa quantitative finance framework"
+keywords = ["quant", "finance", "traits", "signals", "alpha"]
+categories = ["finance", "science"]
+
+[dependencies]
+polars.workspace = true
+ndarray.workspace = true
+thiserror.workspace = true
+chrono.workspace = true
+serde.workspace = true
+
+[lints]
+workspace = true
