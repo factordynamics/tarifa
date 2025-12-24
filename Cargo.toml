@@ -48,7 +48,7 @@ tarifa-combine = { version = "0.1.0", path = "crates/tarifa-combine" }
 tarifa-eval = { version = "0.1.0", path = "crates/tarifa-eval" }
 
 # Perth integration
-perth-data = { path = "../perth/crates/perth-data" }
+perth-data = { git = "https://github.com/factordynamics/perth", package = "perth-data" }
 
 # DataFrames
 polars = { version = "0.46", default-features = false, features = ["lazy", "dtype-date", "streaming", "temporal", "serde"] }
