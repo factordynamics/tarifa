@@ -17,9 +17,13 @@ pub(crate) async fn load_market_data(
     let provider = YahooQuoteProvider::new();
 
     // Determine date range
-    let end: DateTime<Utc> = end_date
-        .map(|d| d.and_hms_opt(23, 59, 59).unwrap().and_utc())
-        .unwrap_or_else(Utc::now);
+    let end: DateTime<Utc> = match end_date {
+        Some(d) => d
+            .and_hms_opt(23, 59, 59)
+            .ok_or_else(|| TarifaError::InvalidDate("Failed to construct end time".to_string()))?
+            .and_utc(),
+        None => Utc::now(),
+    };
 
     // Convert trading days to calendar days (approx 1.5x) and add buffer
     // Trading year has ~252 days, calendar year has ~365 days

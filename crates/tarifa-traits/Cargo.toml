@@ -19,6 +19,7 @@ ndarray.workspace = true
 thiserror.workspace = true
 chrono.workspace = true
 serde.workspace = true
+factors.workspace = true
 
 [lints]
 workspace = true

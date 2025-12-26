@@ -12,7 +12,7 @@ categories = ["finance", "mathematics", "science"]
 
 [workspace]
 resolver = "2"
-members = ["crates/*", "bin"]
+members = ["crates/*", "bin", "examples"]
 default-members = ["bin"]
 
 [workspace.lints.rust]
@@ -43,9 +43,13 @@ strip = "symbols"
 # Internal crates
 tarifa = { version = "0.1.0", path = "crates/tarifa" }
 tarifa-traits = { version = "0.1.0", path = "crates/tarifa-traits" }
-tarifa-signals = { version = "0.1.0", path = "crates/tarifa-signals" }
 tarifa-combine = { version = "0.1.0", path = "crates/tarifa-combine" }
 tarifa-eval = { version = "0.1.0", path = "crates/tarifa-eval" }
+tarifa-factors = { version = "0.1.0", path = "crates/tarifa-factors" }
+tarifa-fmp = { version = "0.1.0", path = "crates/tarifa-fmp" }
+
+# External crates
+factors = { version = "0.2", path = "../factors/crates/factors", default-features = false }
 
 # Perth integration
 perth-data = { git = "https://github.com/factordynamics/perth", package = "perth-data" }
@@ -74,3 +78,9 @@ anyhow = "1"
 
 # Testing
 approx = "0.5"
+
+# HTTP client
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+# Environment variables
+dotenvy = "0.15"

@@ -15,8 +15,8 @@
 //! ## Quick Start
 //!
 //! ```ignore
-//! use tarifa::{Signal, AlphaModel, Result};
-//! use tarifa::signals::Momentum;
+//! use tarifa::{Factor, AlphaModel, Result};
+//! use tarifa::factors::momentum::ShortTermMomentum;
 //! use tarifa::combine::EqualWeightCombiner;
 //! use tarifa::types::{MarketData, Date};
 //!
@@ -25,36 +25,34 @@
 //! let market_data = MarketData::load("data/prices.parquet")?;
 //! let universe = market_data.symbols();
 //!
-//! // Create signals
-//! let signals: Vec<Box<dyn Signal>> = vec![
-//!     Box::new(Momentum::new(20)),
-//!     Box::new(Momentum::new(60)),
+//! // Create factors
+//! let factors: Vec<Box<dyn Factor>> = vec![
+//!     Box::new(ShortTermMomentum::default()),
 //! ];
 //!
-//! // Combine signals into alpha model
+//! // Combine factors into alpha model
 //! let combiner = EqualWeightCombiner::new();
-//! let alpha_model = AlphaModel::new(signals, combiner);
 //!
 //! // Generate expected returns
-//! let expected_returns = alpha_model.expected_returns(&universe, Date::today())?;
+//! // let expected_returns = alpha_model.expected_returns(&universe, Date::today())?;
 //! # Ok(())
 //! # }
 //! ```
 //!
 //! ## Crate Organization
 //!
-//! - [`traits`] - Core trait definitions ([`Signal`], [`AlphaModel`], etc.)
-//! - [`signals`] - Signal implementations (momentum, value, quality, etc.)
-//! - [`combine`] - Signal combination strategies
-//! - [`eval`] - Signal evaluation and backtesting tools
+//! - [`traits`] - Core trait definitions ([`Factor`], [`AlphaModel`], etc.)
+//! - [`factors`] - Factor implementations (momentum, value, quality, etc.) from the factors crate
+//! - [`combine`] - Factor combination strategies
+//! - [`eval`] - Factor evaluation and backtesting tools
 //!
 //! ## Architecture
 //!
 //! tarifa follows a modular architecture:
 //!
-//! 1. **Signals** compute scores for assets at a point in time
-//! 2. **Evaluators** measure signal quality (IC, IR, turnover)
-//! 3. **Combiners** blend multiple signals into composite alpha
+//! 1. **Factors** compute scores for assets at a point in time
+//! 2. **Evaluators** measure factor quality (IC, IR, turnover)
+//! 3. **Combiners** blend multiple factors into composite alpha
 //! 4. **Alpha Models** output expected returns for portfolio optimization
 //!
 //! ## Integration
@@ -78,15 +76,15 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 ///
 /// This module re-exports the foundational traits that define the tarifa API:
 ///
-/// - [`Signal`] - Single alpha signal that scores assets
+/// - [`Factor`] - Single alpha factor that scores assets
 /// - [`AlphaModel`] - Combined model that produces expected returns
-/// - [`SignalEvaluator`] - Evaluates signal quality metrics
-/// - [`Combiner`] - Combines multiple signals into composite alpha
+/// - [`FactorEvaluator`] - Evaluates factor quality metrics
+/// - [`Combiner`] - Combines multiple factors into composite alpha
 ///
 /// # Example
 ///
 /// ```ignore
-/// use tarifa::{Signal, AlphaModel};
+/// use tarifa::{Factor, AlphaModel};
 /// ```
 pub mod traits {
     pub use tarifa_traits::*;
@@ -94,7 +92,7 @@ pub mod traits {
 
 // Re-export core traits at top level for convenience
 pub use tarifa_combine::Combiner;
-pub use tarifa_traits::{AlphaModel, Signal, SignalEvaluator};
+pub use tarifa_traits::{AlphaModel, Factor, FactorEvaluator};
 
 // Re-export error types
 pub use tarifa_traits::{Result, TarifaError};
@@ -104,95 +102,85 @@ pub use tarifa_combine::SignalScore;
 pub use tarifa_traits::types::{Date, MarketData, Symbol};
 
 // ============================================================================
-// Signal Implementations
+// Factor Implementations
 // ============================================================================
 
-/// Signal implementations.
+/// Factor implementations.
 ///
-/// This module contains concrete implementations of the [`Signal`] trait,
-/// organized by category:
+/// This module re-exports the [`factors`] crate which contains 68 factor
+/// implementations organized by category:
 ///
-/// ## Price-Based Signals
+/// ## Price-Based Factors
 ///
 /// - **Momentum**: Short, medium, and long-term return momentum
-/// - **MeanReversion**: Distance from moving averages, RSI extremes
-/// - **Technical**: Breakouts, volume patterns, 52-week highs
+/// - **Volatility**: Historical volatility, beta, idiosyncratic vol
+/// - **Liquidity**: Turnover, Amihud illiquidity, bid-ask spread
 ///
-/// ## Fundamental Signals
+/// ## Fundamental Factors
 ///
 /// - **Value**: Book-to-price, earnings yield, FCF yield
-/// - **Quality**: ROE, ROA, margins, earnings stability
-/// - **Growth**: Earnings growth, revenue growth, estimate revisions
-/// - **Earnings**: SUE, post-earnings drift
+/// - **Quality**: ROE, ROA, margins, Piotroski F-score
+/// - **Growth**: Earnings growth, revenue growth, asset growth
+/// - **Size**: Market cap, enterprise value
 ///
-/// ## Alternative Signals
+/// ## Alternative Factors
 ///
-/// - **Sentiment**: News sentiment, social media, analyst revisions
-/// - **Flow**: Institutional ownership, short interest
-/// - **Events**: Index additions, spinoffs, buybacks
+/// - **Sentiment**: Analyst revisions, earnings surprise
 ///
 /// # Example
 ///
 /// ```ignore
-/// use tarifa::signals::{Momentum, Value, Quality};
-/// use tarifa::Signal;
+/// use tarifa::factors::momentum::ShortTermMomentum;
+/// use tarifa::factors::value::BookToPrice;
+/// use tarifa::Factor;
 ///
-/// # fn example() -> tarifa::Result<()> {
-/// // Create momentum signals
-/// let mom_1m = Momentum::new(20);   // 1-month momentum
-/// let mom_3m = Momentum::new(60);   // 3-month momentum
+/// # fn example() {
+/// // Create momentum factors
+/// let mom_1m = ShortTermMomentum::default();
 ///
-/// // Create fundamental signals
-/// let value = Value::book_to_price();
-/// let quality = Quality::roe();
+/// // Create fundamental factors
+/// let value = BookToPrice::default();
 ///
-/// // Use signals
-/// let signals: Vec<Box<dyn Signal>> = vec![
+/// // Use factors
+/// let factors: Vec<Box<dyn Factor>> = vec![
 ///     Box::new(mom_1m),
-///     Box::new(mom_3m),
 ///     Box::new(value),
-///     Box::new(quality),
 /// ];
-/// # Ok(())
 /// # }
 /// ```
-pub mod signals {
-    pub use tarifa_signals::*;
+pub mod factors {
+    pub use factors::*;
 }
 
 // ============================================================================
-// Signal Combination
+// Factor Combination
 // ============================================================================
 
-/// Signal combination strategies.
+/// Factor combination strategies.
 ///
 /// This module contains implementations of the [`Combiner`] trait that
-/// blend multiple signals into a composite alpha score.
+/// blend multiple factors into a composite alpha score.
 ///
 /// ## Available Combiners
 ///
-/// - **EqualWeightCombiner**: Simple average of z-scored signals
+/// - **EqualWeightCombiner**: Simple average of z-scored factors
 /// - **ICWeightedCombiner**: Weight by historical information coefficient
 /// - **VolScaleCombiner**: IC-weighted with volatility scaling
-/// - **MLEnsembleCombiner**: Machine learning meta-model (XGBoost/RandomForest)
 ///
 /// # Example
 ///
 /// ```ignore
-/// use tarifa::combine::{EqualWeightCombiner, ICWeightedCombiner};
-/// use tarifa::{Combiner, Signal};
-/// use tarifa::types::SignalScore;
+/// use tarifa::combine::{EqualWeightCombiner};
+/// use tarifa::{Combiner, Factor};
+/// use tarifa::SignalScore;
 ///
 /// # fn example() -> tarifa::Result<()> {
 /// // Equal weight combiner (simplest)
 /// let equal_weight = EqualWeightCombiner::new();
 ///
-/// // IC-weighted combiner (uses historical IC to weight signals)
-/// let ic_weighted = ICWeightedCombiner::new(252); // 1-year lookback
-///
-/// // Use combiner with signal scores
-/// let signal_scores: Vec<SignalScore> = vec![/* ... */];
-/// let composite = ic_weighted.combine(&signal_scores)?;
+/// // Use combiner with factor scores
+/// let factor_scores: Vec<SignalScore> = vec![/* ... */];
+/// let composite = equal_weight.combine(&factor_scores)?;
 /// # Ok(())
 /// # }
 /// ```
@@ -201,33 +189,33 @@ pub mod combine {
 }
 
 // ============================================================================
-// Signal Evaluation
+// Factor Evaluation
 // ============================================================================
 
-/// Signal evaluation and backtesting.
+/// Factor evaluation and backtesting.
 ///
-/// This module contains tools for evaluating signal quality and conducting
+/// This module contains tools for evaluating factor quality and conducting
 /// backtests to measure predictive power.
 ///
 /// ## Key Components
 ///
 /// - **InformationCoefficient**: Calculate IC and IR metrics
-/// - **RollingEvaluator**: Time-series evaluation with rolling windows
-/// - **DecayAnalysis**: Analyze signal decay over different horizons
-/// - **TurnoverAnalysis**: Measure signal stability and transaction costs
+/// - **DefaultEvaluator**: Evaluate factor performance with various metrics
+/// - **DecayAnalysis**: Analyze factor decay over different horizons
+/// - **Backtest**: Full backtesting framework with transaction costs
 ///
 /// ## Evaluation Metrics
 ///
 /// ### Information Coefficient (IC)
 ///
-/// Correlation between signal scores and future returns:
+/// Correlation between factor scores and future returns:
 ///
 /// ```text
-/// IC_t = corr(signal_t, returns_{t+horizon})
+/// IC_t = corr(factor_t, returns_{t+horizon})
 /// ```
 ///
 /// - IC > 0.02: Weak but usable
-/// - IC > 0.05: Strong signal
+/// - IC > 0.05: Strong factor
 /// - IC > 0.10: Likely overfit
 ///
 /// ### Information Ratio (IR)
@@ -238,14 +226,14 @@ pub mod combine {
 /// IR = mean(IC) / std(IC)
 /// ```
 ///
-/// High IC with low IR suggests unreliable signal.
+/// High IC with low IR suggests unreliable factor.
 ///
 /// ### Turnover
 ///
-/// How much the signal changes period-to-period:
+/// How much the factor changes period-to-period:
 ///
 /// ```text
-/// Turnover = 1 - rank_correlation(signal_t, signal_{t-1})
+/// Turnover = 1 - rank_correlation(factor_t, factor_{t-1})
 /// ```
 ///
 /// Target < 20% monthly turnover for practical implementation.
@@ -253,32 +241,67 @@ pub mod combine {
 /// # Example
 ///
 /// ```ignore
-/// use tarifa::eval::{RollingEvaluator, InformationCoefficient};
-/// use tarifa::{Signal, SignalEvaluator};
-/// use tarifa::signals::Momentum;
-/// use tarifa::types::MarketData;
+/// use tarifa::eval::{DefaultEvaluator, EvaluatorConfig};
 ///
-/// # fn example() -> tarifa::Result<()> {
-/// let market_data = MarketData::load("data/prices.parquet")?;
-/// let signal = Momentum::new(20);
+/// # fn example() {
+/// // Create evaluator with pre-computed scores and returns
+/// let evaluator = DefaultEvaluator::new(
+///     signal_scores,
+///     forward_returns,
+///     EvaluatorConfig::default()
+/// );
 ///
-/// // Create evaluator
-/// let evaluator = RollingEvaluator::new(&market_data, lookback_days = 252);
+/// // Evaluate factor quality
+/// let ic = evaluator.ic(21);
+/// let ir = evaluator.ir(21);
+/// let turnover = evaluator.turnover();
 ///
-/// // Evaluate signal quality
-/// let ic = evaluator.ic(&signal, horizon = 21);
-/// let ir = evaluator.ir(&signal, horizon = 21);
-/// let turnover = evaluator.turnover(&signal);
-///
-/// println!("Signal: {}", signal.name());
 /// println!("IC: {:.3}", ic);
 /// println!("IR: {:.2}", ir);
 /// println!("Turnover: {:.1}%", turnover * 100.0);
-/// # Ok(())
 /// # }
 /// ```
 pub mod eval {
     pub use tarifa_eval::*;
+}
+
+// ============================================================================
+// Data Providers
+// ============================================================================
+
+/// Financial Modeling Prep (FMP) API client.
+///
+/// This module provides access to fundamental financial data from the FMP API,
+/// including income statements, balance sheets, cash flows, and key metrics.
+///
+/// ## Setup
+///
+/// 1. Get a free API key at <https://financialmodelingprep.com/>
+/// 2. Set the `FMP_API_KEY` environment variable or add to `.env` file
+///
+/// ## Example
+///
+/// ```ignore
+/// use tarifa::fmp::{FmpClient, Period};
+///
+/// #[tokio::main]
+/// async fn main() -> Result<(), Box<dyn std::error::Error>> {
+///     let client = FmpClient::from_env()?;
+///
+///     // Fetch comprehensive fundamental data
+///     let data = client.fundamental_data("AAPL", 5).await?;
+///
+///     // Access key metrics
+///     if let Some(metrics) = data.latest_metrics() {
+///         println!("ROE: {:.2}%", metrics.roe * 100.0);
+///         println!("P/E: {:.1}", metrics.pe_ratio);
+///     }
+///
+///     Ok(())
+/// }
+/// ```
+pub mod fmp {
+    pub use tarifa_fmp::*;
 }
 
 // ============================================================================
@@ -295,12 +318,12 @@ pub mod eval {
 /// ```
 ///
 /// This brings into scope:
-/// - Core traits: [`Signal`], [`AlphaModel`], [`SignalEvaluator`], [`Combiner`]
+/// - Core traits: [`Factor`], [`AlphaModel`], [`FactorEvaluator`], [`Combiner`]
 /// - Common types: [`MarketData`], [`Symbol`], [`Date`], [`SignalScore`]
 /// - Error types: [`Result`], [`TarifaError`]
 pub mod prelude {
     pub use crate::traits::*;
-    pub use crate::{AlphaModel, Combiner, Signal, SignalEvaluator};
+    pub use crate::{AlphaModel, Combiner, Factor, FactorEvaluator};
     pub use crate::{Result, TarifaError};
 }
 
@@ -325,9 +348,9 @@ mod tests {
         // This test verifies that all re-exports compile correctly
         // by using them in type annotations
 
-        fn _accept_signal(_signal: &dyn Signal) {}
+        fn _accept_factor(_factor: &dyn Factor) {}
         fn _accept_alpha_model(_model: &dyn AlphaModel) {}
-        fn _accept_evaluator(_eval: &dyn SignalEvaluator) {}
+        fn _accept_evaluator(_eval: &dyn FactorEvaluator) {}
         fn _accept_combiner(_combiner: &dyn Combiner) {}
 
         // If this compiles, re-exports are working

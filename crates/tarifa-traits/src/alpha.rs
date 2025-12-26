@@ -1,17 +1,18 @@
 //! Alpha model trait for generating expected returns.
 //!
-//! This module defines the `AlphaModel` trait, which combines multiple signals
+//! This module defines the `AlphaModel` trait, which combines multiple factors
 //! to produce expected return forecasts for securities. Alpha models are the
 //! core predictive component of quantitative trading strategies.
 
-use crate::{Date, Result, Signal, Symbol};
+use crate::{Date, Result, Symbol};
+use factors::Factor;
 use ndarray::Array1;
 use polars::prelude::*;
 
 /// An alpha model that generates expected return forecasts.
 ///
-/// The `AlphaModel` trait defines the interface for combining signals into
-/// actionable predictions. Implementations aggregate multiple signals,
+/// The `AlphaModel` trait defines the interface for combining factors into
+/// actionable predictions. Implementations aggregate multiple factors,
 /// potentially with different weights or combination methods, to produce
 /// expected returns for a universe of securities.
 ///
@@ -24,27 +25,28 @@ use polars::prelude::*;
 /// # Example
 ///
 /// ```no_run
-/// use tarifa_traits::{AlphaModel, Signal, Symbol, Date, Result};
+/// use tarifa_traits::{AlphaModel, Symbol, Date, Result};
+/// use factors::Factor;
 /// use ndarray::Array1;
 /// use polars::prelude::*;
 ///
 /// struct SimpleAlpha {
-///     signals: Vec<Box<dyn Signal>>,
+///     factors: Vec<Box<dyn Factor>>,
 /// }
 ///
 /// impl AlphaModel for SimpleAlpha {
 ///     fn expected_returns(&self, universe: &[Symbol], date: Date) -> Result<Array1<f64>> {
-///         // Combine signals to produce expected returns
+///         // Combine factors to produce expected returns
 ///         Ok(Array1::zeros(universe.len()))
 ///     }
 ///
-///     fn signal_scores(&self, universe: &[Symbol], date: Date) -> Result<DataFrame> {
-///         // Return raw signal scores
+///     fn factor_scores(&self, universe: &[Symbol], date: Date) -> Result<DataFrame> {
+///         // Return raw factor scores
 ///         Ok(DataFrame::default())
 ///     }
 ///
-///     fn signals(&self) -> Vec<&dyn Signal> {
-///         self.signals.iter().map(|s| s.as_ref()).collect()
+///     fn factors(&self) -> Vec<&dyn Factor> {
+///         self.factors.iter().map(|s| s.as_ref()).collect()
 ///     }
 /// }
 /// ```
@@ -67,7 +69,7 @@ pub trait AlphaModel: Send + Sync {
     /// # Errors
     ///
     /// Returns an error if:
-    /// - Signal computation fails
+    /// - Factor computation fails
     /// - Insufficient data is available
     /// - Any symbol in the universe is invalid
     ///
@@ -80,39 +82,39 @@ pub trait AlphaModel: Send + Sync {
     /// # struct MyAlpha;
     /// # impl AlphaModel for MyAlpha {
     /// fn expected_returns(&self, universe: &[Symbol], date: Date) -> Result<Array1<f64>> {
-    ///     // Compute signals for each symbol
-    ///     // Combine signals using model weights
+    ///     // Compute factors for each symbol
+    ///     // Combine factors using model weights
     ///     // Return expected returns vector
     ///     Ok(Array1::zeros(universe.len()))
     /// }
-    /// #     fn signal_scores(&self, universe: &[Symbol], date: Date) -> Result<DataFrame> { Ok(DataFrame::default()) }
-    /// #     fn signals(&self) -> Vec<&dyn tarifa_traits::Signal> { vec![] }
+    /// #     fn factor_scores(&self, universe: &[Symbol], date: Date) -> Result<DataFrame> { Ok(DataFrame::default()) }
+    /// #     fn factors(&self) -> Vec<&dyn factors::Factor> { vec![] }
     /// # }
     /// ```
     fn expected_returns(&self, universe: &[Symbol], date: Date) -> Result<Array1<f64>>;
 
-    /// Returns the raw signal scores for a universe of securities.
+    /// Returns the raw factor scores for a universe of securities.
     ///
-    /// This method provides access to the underlying signal values before
+    /// This method provides access to the underlying factor values before
     /// they are combined into expected returns. This is useful for:
-    /// - Signal analysis and debugging
+    /// - Factor analysis and debugging
     /// - Custom combination strategies
     /// - Performance attribution
     ///
     /// # Arguments
     ///
-    /// * `universe` - Slice of symbols to compute signals for
-    /// * `date` - The date as of which to compute signals
+    /// * `universe` - Slice of symbols to compute factors for
+    /// * `date` - The date as of which to compute factors
     ///
     /// # Returns
     ///
     /// Returns a DataFrame with columns:
     /// - `symbol`: Security identifier
-    /// - One column per signal containing its scores
+    /// - One column per factor containing its scores
     ///
     /// # Errors
     ///
-    /// Returns an error if signal computation fails.
+    /// Returns an error if factor computation fails.
     ///
     /// # Example
     ///
@@ -123,78 +125,93 @@ pub trait AlphaModel: Send + Sync {
     /// # struct MyAlpha;
     /// # impl AlphaModel for MyAlpha {
     /// #     fn expected_returns(&self, universe: &[Symbol], date: Date) -> Result<Array1<f64>> { Ok(Array1::zeros(0)) }
-    /// fn signal_scores(&self, universe: &[Symbol], date: Date) -> Result<DataFrame> {
-    ///     // Compute each signal
+    /// fn factor_scores(&self, universe: &[Symbol], date: Date) -> Result<DataFrame> {
+    ///     // Compute each factor
     ///     // Join results into a single DataFrame
-    ///     // Return with one column per signal
+    ///     // Return with one column per factor
     ///     Ok(DataFrame::default())
     /// }
-    /// #     fn signals(&self) -> Vec<&dyn tarifa_traits::Signal> { vec![] }
+    /// #     fn factors(&self) -> Vec<&dyn factors::Factor> { vec![] }
     /// # }
     /// ```
-    fn signal_scores(&self, universe: &[Symbol], date: Date) -> Result<DataFrame>;
+    fn factor_scores(&self, universe: &[Symbol], date: Date) -> Result<DataFrame>;
 
-    /// Returns references to the signals used by this alpha model.
+    /// Returns references to the factors used by this alpha model.
     ///
     /// This provides introspection into the model's components, allowing
-    /// for analysis, documentation, and validation of the signal set.
+    /// for analysis, documentation, and validation of the factor set.
     ///
     /// # Returns
     ///
-    /// Returns a vector of trait object references to the component signals.
+    /// Returns a vector of trait object references to the component factors.
     ///
     /// # Example
     ///
     /// ```no_run
-    /// # use tarifa_traits::{AlphaModel, Signal, Symbol, Date, Result};
+    /// # use tarifa_traits::{AlphaModel, Symbol, Date, Result};
+    /// # use factors::Factor;
     /// # use ndarray::Array1;
     /// # use polars::prelude::*;
-    /// # struct MyAlpha { signals: Vec<Box<dyn Signal>> }
+    /// # struct MyAlpha { factors: Vec<Box<dyn Factor>> }
     /// # impl AlphaModel for MyAlpha {
     /// #     fn expected_returns(&self, universe: &[Symbol], date: Date) -> Result<Array1<f64>> { Ok(Array1::zeros(0)) }
-    /// #     fn signal_scores(&self, universe: &[Symbol], date: Date) -> Result<DataFrame> { Ok(DataFrame::default()) }
-    /// fn signals(&self) -> Vec<&dyn Signal> {
-    ///     self.signals.iter().map(|s| s.as_ref()).collect()
+    /// #     fn factor_scores(&self, universe: &[Symbol], date: Date) -> Result<DataFrame> { Ok(DataFrame::default()) }
+    /// fn factors(&self) -> Vec<&dyn Factor> {
+    ///     self.factors.iter().map(|s| s.as_ref()).collect()
     /// }
     /// # }
     /// ```
-    fn signals(&self) -> Vec<&dyn Signal>;
+    fn factors(&self) -> Vec<&dyn Factor>;
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{MarketData, Signal};
     use chrono::NaiveDate;
+    use factors::{DataFrequency, FactorCategory};
 
-    struct TestSignal {
+    #[derive(Debug)]
+    struct TestFactor {
         name: String,
     }
 
-    impl Signal for TestSignal {
+    impl Factor for TestFactor {
         fn name(&self) -> &str {
             &self.name
         }
 
-        fn score(&self, _data: &MarketData, _date: Date) -> Result<DataFrame> {
-            Ok(df! {
-                "symbol" => &["AAPL", "MSFT"],
-                "score" => &[0.5, -0.3],
-            }
-            .unwrap())
+        fn description(&self) -> &str {
+            "Test factor for unit tests"
+        }
+
+        fn category(&self) -> FactorCategory {
+            FactorCategory::Momentum
+        }
+
+        fn required_columns(&self) -> &[&str] {
+            &["close"]
         }
 
         fn lookback(&self) -> usize {
             20
         }
 
-        fn required_columns(&self) -> &[&str] {
-            &["close"]
+        fn frequency(&self) -> DataFrequency {
+            DataFrequency::Daily
+        }
+
+        fn compute_raw(&self, _data: &LazyFrame, _date: NaiveDate) -> factors::Result<DataFrame> {
+            Ok(df! {
+                "symbol" => &["AAPL", "MSFT"],
+                "date" => &[NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(); 2],
+                "test_factor" => &[0.5, -0.3],
+            }
+            .unwrap())
         }
     }
 
     struct TestAlpha {
-        signals: Vec<Box<dyn Signal>>,
+        factors: Vec<Box<dyn Factor>>,
     }
 
     impl AlphaModel for TestAlpha {
@@ -202,7 +219,7 @@ mod tests {
             Ok(Array1::zeros(universe.len()))
         }
 
-        fn signal_scores(&self, universe: &[Symbol], _date: Date) -> Result<DataFrame> {
+        fn factor_scores(&self, universe: &[Symbol], _date: Date) -> Result<DataFrame> {
             let mut symbols = Vec::new();
             let mut scores = Vec::new();
 
@@ -218,14 +235,14 @@ mod tests {
             .unwrap())
         }
 
-        fn signals(&self) -> Vec<&dyn Signal> {
-            self.signals.iter().map(|s| s.as_ref()).collect()
+        fn factors(&self) -> Vec<&dyn Factor> {
+            self.factors.iter().map(|s| s.as_ref()).collect()
         }
     }
 
     #[test]
     fn test_alpha_expected_returns() {
-        let alpha = TestAlpha { signals: vec![] };
+        let alpha = TestAlpha { factors: vec![] };
         let universe = vec!["AAPL".to_string(), "MSFT".to_string()];
         let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
 
@@ -237,12 +254,12 @@ mod tests {
     }
 
     #[test]
-    fn test_alpha_signal_scores() {
-        let alpha = TestAlpha { signals: vec![] };
+    fn test_alpha_factor_scores() {
+        let alpha = TestAlpha { factors: vec![] };
         let universe = vec!["AAPL".to_string()];
         let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
 
-        let result = alpha.signal_scores(&universe, date);
+        let result = alpha.factor_scores(&universe, date);
         assert!(result.is_ok());
 
         let scores = result.unwrap();
@@ -251,22 +268,22 @@ mod tests {
     }
 
     #[test]
-    fn test_alpha_signals() {
-        let signal1 = Box::new(TestSignal {
-            name: "signal1".to_string(),
+    fn test_alpha_factors() {
+        let factor1 = Box::new(TestFactor {
+            name: "factor1".to_string(),
         });
-        let signal2 = Box::new(TestSignal {
-            name: "signal2".to_string(),
+        let factor2 = Box::new(TestFactor {
+            name: "factor2".to_string(),
         });
 
         let alpha = TestAlpha {
-            signals: vec![signal1, signal2],
+            factors: vec![factor1, factor2],
         };
 
-        let signals = alpha.signals();
-        assert_eq!(signals.len(), 2);
-        assert_eq!(signals[0].name(), "signal1");
-        assert_eq!(signals[1].name(), "signal2");
+        let factors = alpha.factors();
+        assert_eq!(factors.len(), 2);
+        assert_eq!(factors[0].name(), "factor1");
+        assert_eq!(factors[1].name(), "factor2");
     }
 
     #[test]
@@ -277,7 +294,7 @@ mod tests {
 
     #[test]
     fn test_empty_universe() {
-        let alpha = TestAlpha { signals: vec![] };
+        let alpha = TestAlpha { factors: vec![] };
         let universe: Vec<Symbol> = vec![];
         let date = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap();
 

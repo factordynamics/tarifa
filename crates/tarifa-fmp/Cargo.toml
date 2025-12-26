@@ -1,0 +1,43 @@
+[package]
+name = "tarifa-fmp"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+description = "Financial Modeling Prep API client for Tarifa"
+
+[dependencies]
+# HTTP client
+reqwest = { workspace = true }
+
+# Serialization
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+# Date/time
+chrono = { workspace = true }
+
+# Error handling
+thiserror = { workspace = true }
+
+# Environment variables
+dotenvy = { workspace = true }
+
+# Async runtime
+tokio = { workspace = true }
+
+# DataFrames (for MarketData conversion)
+polars = { workspace = true }
+
+# Tarifa types
+tarifa-traits = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+
+[lints]
+workspace = true

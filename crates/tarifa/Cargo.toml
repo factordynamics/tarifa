@@ -13,9 +13,17 @@ description = "Alpha model for equity return prediction"
 [dependencies]
 # tarifa crates
 tarifa-traits = { workspace = true }
-tarifa-signals = { workspace = true }
+factors = { workspace = true }
 tarifa-combine = { workspace = true }
 tarifa-eval = { workspace = true }
+tarifa-fmp = { workspace = true }
+
+# Dependencies for examples
+polars = { workspace = true }
+chrono = { workspace = true }
+ndarray = { workspace = true }
+tokio = { workspace = true }
+dotenvy = { workspace = true }
 
 [lints]
 workspace = true

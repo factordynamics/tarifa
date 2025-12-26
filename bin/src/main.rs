@@ -8,9 +8,9 @@ mod signals;
 use anyhow::Result;
 use chrono::{NaiveDate, Utc};
 use clap::{Parser, Subcommand};
+use factors::{FactorCategory, FactorRegistry};
 use std::process;
 use tarifa_eval::{DefaultEvaluator, EvaluatorConfig};
-use tarifa_signals::registry::{SignalCategory, signals_by_category};
 
 #[derive(Parser)]
 #[command(name = "tarifa")]
@@ -202,14 +202,21 @@ async fn run() -> Result<()> {
 
 async fn list_signals(category: Option<String>, verbose: bool) -> Result<()> {
     println!("\n╔══════════════════════════════════════════════════════════════╗");
-    println!("║                    Available Signals                         ║");
+    println!("║                    Available Factors                         ║");
     println!("╚══════════════════════════════════════════════════════════════╝\n");
+
+    let registry = FactorRegistry::with_defaults();
 
     // Group by category
     let categories = [
-        (SignalCategory::Momentum, "Momentum"),
-        (SignalCategory::Value, "Value"),
-        (SignalCategory::Quality, "Quality"),
+        (FactorCategory::Momentum, "Momentum"),
+        (FactorCategory::Value, "Value"),
+        (FactorCategory::Quality, "Quality"),
+        (FactorCategory::Growth, "Growth"),
+        (FactorCategory::Size, "Size"),
+        (FactorCategory::Volatility, "Volatility"),
+        (FactorCategory::Liquidity, "Liquidity"),
+        (FactorCategory::Sentiment, "Sentiment"),
     ];
 
     for (cat, cat_name) in categories {
@@ -219,38 +226,35 @@ async fn list_signals(category: Option<String>, verbose: bool) -> Result<()> {
             continue;
         }
 
-        let cat_signals = signals_by_category(&cat);
-        if cat_signals.is_empty() {
+        let cat_factors = registry.by_category(cat);
+        if cat_factors.is_empty() {
             continue;
         }
 
-        println!("{} ({}):", cat_name, cat.description());
-        println!("{}", "─".repeat(60));
+        println!("{}:", cat_name);
+        println!("{}", "-".repeat(60));
 
-        for info in cat_signals {
+        for factor in cat_factors {
             if verbose {
-                let fundamentals = if info.requires_fundamentals {
-                    " [requires fundamentals]"
-                } else {
-                    ""
-                };
                 println!(
-                    "  {:25} - {} (lookback: {} days){}",
-                    info.name, info.description, info.typical_lookback, fundamentals
+                    "  {:25} - {} (lookback: {} days)",
+                    factor.name(),
+                    factor.description(),
+                    factor.lookback()
                 );
             } else {
-                println!("  {}", info.name);
+                println!("  {}", factor.name());
             }
         }
         println!();
     }
 
     if !verbose {
-        println!("Use --verbose for detailed signal descriptions.\n");
+        println!("Use --verbose for detailed factor descriptions.\n");
     }
 
     // Show aliases
-    println!("Signal aliases:");
+    println!("Factor aliases:");
     println!("  momentum_1m, mom_1m    -> short_term_momentum");
     println!("  momentum_6m, mom_6m    -> medium_term_momentum");
     println!("  momentum_12m, mom_12m  -> long_term_momentum");
@@ -271,7 +275,7 @@ async fn evaluate_signal(
     println!("╚══════════════════════════════════════════════════════════════╝\n");
 
     // Create the signal
-    let signal = match signals::create_signal(signal_name) {
+    let signal = match signals::create_factor(signal_name) {
         Ok(s) => s,
         Err(e) => {
             println!("Error: {}", e);
@@ -589,7 +593,7 @@ async fn run_backtest(
     println!();
 
     // Create the signal
-    let signal_instance = match signals::create_signal(signal) {
+    let signal_instance = match signals::create_factor(signal) {
         Ok(s) => s,
         Err(e) => {
             println!("Error: {}", e);
@@ -863,7 +867,7 @@ async fn show_scores(
     println!("╚══════════════════════════════════════════════════════════════╝\n");
 
     // Create the signal
-    let signal = match signals::create_signal(signal_name) {
+    let signal = match signals::create_factor(signal_name) {
         Ok(s) => s,
         Err(e) => {
             println!("Error: {}", e);
@@ -1002,7 +1006,7 @@ async fn combine_signals(
     let mut max_lookback = 0;
 
     for signal_name in signals {
-        match self::signals::create_signal(signal_name) {
+        match self::signals::create_factor(signal_name) {
             Ok(signal) => {
                 max_lookback = max_lookback.max(signal.lookback());
                 signal_objects.push(signal);
@@ -1174,7 +1178,7 @@ async fn research_signal(
     }
 
     // Create the signal
-    let signal = match signals::create_signal(signal_name) {
+    let signal = match signals::create_factor(signal_name) {
         Ok(s) => s,
         Err(e) => {
             println!("Error: {}", e);

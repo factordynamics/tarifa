@@ -6,38 +6,52 @@ Core trait definitions for the Tarifa quantitative finance framework.
 
 This crate provides the foundational traits and types used throughout the Tarifa ecosystem:
 
-- **Signal**: Trait for implementing individual trading signals that score securities
-- **AlphaModel**: Trait for combining signals into expected return predictions
-- **SignalEvaluator**: Trait for evaluating signal quality and performance
+- **Factor**: Re-exported from the `factors` crate, trait for implementing individual trading factors that score securities
+- **AlphaModel**: Trait for combining factors into expected return predictions
+- **FactorEvaluator**: Trait for evaluating factor quality and performance
 - **Common Types**: Shared data structures like `MarketData` and error types
 
 ## Usage
 
 These traits define the contracts for implementing quantitative trading strategies:
 
-```rust
-use tarifa_traits::{Signal, AlphaModel, MarketData, Result};
+```rust,no_run
+use tarifa_traits::{Factor, AlphaModel, MarketData, Result};
+use factors::{FactorCategory, DataFrequency};
 use polars::prelude::*;
 use chrono::NaiveDate;
 
-struct MySignal;
+#[derive(Debug)]
+struct MyFactor;
 
-impl Signal for MySignal {
+impl Factor for MyFactor {
     fn name(&self) -> &str {
-        "my_signal"
+        "my_factor"
     }
 
-    fn score(&self, data: &MarketData, date: NaiveDate) -> Result<DataFrame> {
-        // Compute signal scores
-        todo!()
+    fn description(&self) -> &str {
+        "A custom trading factor"
+    }
+
+    fn category(&self) -> FactorCategory {
+        FactorCategory::Momentum
+    }
+
+    fn required_columns(&self) -> &[&str] {
+        &["close", "volume"]
     }
 
     fn lookback(&self) -> usize {
         20 // Days of historical data needed
     }
 
-    fn required_columns(&self) -> &[&str] {
-        &["close", "volume"]
+    fn frequency(&self) -> DataFrequency {
+        DataFrequency::Daily
+    }
+
+    fn compute_raw(&self, data: &LazyFrame, date: NaiveDate) -> factors::Result<DataFrame> {
+        // Compute factor scores
+        todo!()
     }
 }
 ```

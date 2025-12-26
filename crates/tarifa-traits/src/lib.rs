@@ -16,14 +16,13 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub mod alpha;
 pub mod error;
 pub mod evaluator;
-pub mod signal;
 pub mod types;
 
 // Re-exports
 pub use alpha::AlphaModel;
 pub use error::{Result, TarifaError};
-pub use evaluator::SignalEvaluator;
-pub use signal::Signal;
+pub use evaluator::FactorEvaluator;
+pub use factors::Factor;
 pub use types::{Date, MarketData, Symbol};
 
 #[cfg(test)]

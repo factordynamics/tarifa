@@ -75,3 +75,10 @@ backtest signal start end:
 # Show signal scores
 score signal +symbols:
     cargo run --release -- score {{ signal }} {{ symbols }}
+
+# Run all backtest examples
+examples:
+    cargo run --release -p tarifa-examples --example momentum_backtest
+    cargo run --release -p tarifa-examples --example value_backtest
+    cargo run --release -p tarifa-examples --example quality_backtest
+    cargo run --release -p tarifa-examples --example multifactor_backtest

@@ -1,0 +1,28 @@
+[package]
+name = "tarifa-examples"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+tarifa = { workspace = true }
+tarifa-fmp = { workspace = true }
+tokio = { workspace = true }
+
+[[example]]
+name = "quality_backtest"
+path = "quality_backtest.rs"
+
+[[example]]
+name = "momentum_backtest"
+path = "momentum_backtest.rs"
+
+[[example]]
+name = "value_backtest"
+path = "value_backtest.rs"
+
+[[example]]
+name = "multifactor_backtest"
+path = "multifactor_backtest.rs"
