@@ -49,7 +49,7 @@ tarifa-factors = { version = "0.1.0", path = "crates/tarifa-factors" }
 tarifa-fmp = { version = "0.1.0", path = "crates/tarifa-fmp" }
 
 # External crates
-factors = { version = "0.2", path = "../factors/crates/factors", default-features = false }
+factors = { version = "0.2", default-features = false }
 
 # Perth integration
 perth-data = { git = "https://github.com/factordynamics/perth", package = "perth-data" }
